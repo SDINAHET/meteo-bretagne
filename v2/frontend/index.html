@@ -1,0 +1,625 @@
+<!-- <!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Météo Bretagne IA</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #38bdf8;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .stat {
+      background: #1e293b;
+      padding: 16px;
+      border-radius: 12px;
+    }
+
+    .label {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .value {
+      font-size: 26px;
+      font-weight: bold;
+      margin-top: 8px;
+    }
+
+    .resume {
+      background: #020617;
+      padding: 18px;
+      border-radius: 12px;
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+
+    button {
+      margin-top: 20px;
+      background: #0284c7;
+      color: white;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #0369a1;
+    }
+
+    .error {
+      color: #f87171;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>🌦️ Météo Bretagne IA</h1>
+      <p>Prévision locale générée avec FastAPI, Python et Ollama.</p>
+
+      <div class="grid">
+        <div class="stat">
+          <div class="label">Ville</div>
+          <div class="value" id="ville">...</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Température</div>
+          <div class="value" id="temperature">...</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Pluie</div>
+          <div class="value" id="pluie">...</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Rafales</div>
+          <div class="value" id="rafales">...</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Risque</div>
+          <div class="value" id="risque">...</div>
+        </div>
+      </div>
+
+      <h2>Résumé IA</h2>
+      <div class="resume" id="resume">Chargement...</div>
+
+      <button onclick="chargerMeteo()">Actualiser</button>
+      <div class="error" id="error"></div>
+    </div>
+  </div>
+
+<script>
+async function chargerMeteo() {
+    const error = document.getElementById("error");
+    const resume = document.getElementById("resume");
+
+    error.textContent = "";
+    resume.textContent = "Chargement des données météo...";
+
+    try {
+    // 1) Charger rapidement les données météo simples
+    const meteoResponse = await fetch("http://127.0.0.1:8001/meteo/rennes");
+
+    if (!meteoResponse.ok) {
+        throw new Error("Erreur API météo");
+    }
+
+    const meteo = await meteoResponse.json();
+
+    document.getElementById("ville").textContent = meteo.ville;
+    document.getElementById("temperature").textContent = meteo.temperature + "°C";
+    document.getElementById("pluie").textContent = meteo.pluie_mm + " mm";
+    document.getElementById("rafales").textContent = meteo.rafales_kmh + " km/h";
+    document.getElementById("risque").textContent = meteo.risque;
+
+    // 2) Charger ensuite le résumé IA
+    resume.textContent = "Génération du résumé IA avec Ollama...";
+
+    const resumeResponse = await fetch("http://127.0.0.1:8001/meteo/rennes/resume");
+
+    if (!resumeResponse.ok) {
+        throw new Error("Erreur API résumé");
+    }
+
+    const dataResume = await resumeResponse.json();
+
+    if (dataResume.error) {
+        throw new Error(dataResume.error);
+    }
+
+    resume.textContent = dataResume.resume;
+    } catch (err) {
+    error.textContent = "Erreur : " + err.message;
+    resume.textContent = "Les données météo simples peuvent fonctionner, mais le résumé IA a échoué.";
+    }
+}
+
+chargerMeteo();
+</script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Météo Bretagne IA</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #38bdf8;
+    }
+
+    h2 {
+      margin-top: 28px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .stat {
+      background: #1e293b;
+      padding: 16px;
+      border-radius: 12px;
+    }
+
+    .label {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .value {
+      font-size: 26px;
+      font-weight: bold;
+      margin-top: 8px;
+    }
+
+    .resume {
+      background: #020617;
+      padding: 18px;
+      border-radius: 12px;
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+
+    button {
+      margin-top: 20px;
+      background: #0284c7;
+      color: white;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #0369a1;
+    }
+
+    .error {
+      color: #f87171;
+      margin-top: 16px;
+    }
+
+    #map {
+      height: 460px;
+      width: 100%;
+      border-radius: 16px;
+      margin-top: 16px;
+      border: 1px solid #334155;
+      overflow: hidden;
+    }
+
+    .leaflet-popup-content-wrapper,
+    .leaflet-popup-tip {
+      background: #020617;
+      color: #e5e7eb;
+    }
+
+    .city-label {
+      background: #020617;
+      color: #e5e7eb;
+      border: 1px solid #38bdf8;
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+    }
+
+    .weather-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 18px;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .weather-table th,
+    .weather-table td {
+      padding: 12px;
+      border-bottom: 1px solid #334155;
+      text-align: left;
+    }
+
+    .weather-table th {
+      color: #93c5fd;
+      background: #1e293b;
+    }
+
+    .weather-table tr:hover {
+      background: #1e293b;
+      cursor: pointer;
+    }
+
+    @media (max-width: 700px) {
+      .container {
+        margin: 10px auto;
+        padding: 10px;
+      }
+
+      .card {
+        padding: 16px;
+      }
+
+      .value {
+        font-size: 22px;
+      }
+
+      #map {
+        height: 360px;
+      }
+
+      .weather-table {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>🌦️ Météo Bretagne IA</h1>
+      <p>Prévision locale générée avec FastAPI, Python, Ollama et données météo Météo-France via API.</p>
+
+      <div class="grid">
+        <div class="stat">
+          <div class="label">Ville</div>
+          <div class="value" id="ville">...</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Température</div>
+          <div class="value" id="temperature">...</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Pluie</div>
+          <div class="value" id="pluie">...</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Rafales</div>
+          <div class="value" id="rafales">...</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Risque</div>
+          <div class="value" id="risque">...</div>
+        </div>
+      </div>
+
+      <h2>Résumé IA</h2>
+      <div class="resume" id="resume">Chargement...</div>
+
+      <button onclick="actualiserTout()">Actualiser</button>
+      <div class="error" id="error"></div>
+
+      <h2>Carte météo Bretagne</h2>
+      <p>Survole une ville pour voir le résumé, clique pour afficher le détail.</p>
+      <div id="map"></div>
+
+      <h2>Températures des villes</h2>
+      <table class="weather-table">
+        <thead>
+          <tr>
+            <th>Ville</th>
+            <th>Température</th>
+            <th>Pluie</th>
+            <th>Rafales</th>
+            <th>Risque</th>
+          </tr>
+        </thead>
+        <tbody id="villes-table">
+          <tr>
+            <td colspan="5">Chargement...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <script>
+    const API_BASE_URL = "http://127.0.0.1:8001";
+
+    let map;
+    let markersLayer;
+
+    function initMap() {
+      map = L.map("map").setView([48.1, -2.8], 8);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap"
+      }).addTo(map);
+
+      markersLayer = L.layerGroup().addTo(map);
+    }
+
+    function couleurSelonTemperature(temp) {
+        if (temp === null || temp === undefined) return "#94a3b8";
+
+        if (temp < -10) return "#1e3a8a";
+        if (temp < -5) return "#2563eb";
+        if (temp < 0) return "#38bdf8";
+        if (temp < 5) return "#67e8f9";
+        if (temp < 10) return "#22c55e";
+        if (temp < 15) return "#84cc16";
+        if (temp < 20) return "#eab308";
+        if (temp < 25) return "#facc15";  // jaune
+        if (temp < 30) return "#ff8800";  // orange vif
+        if (temp < 35) return "#c1121f";  // rouge foncé
+        if (temp < 40) return "#ef4444";  // rouge
+
+        return "#7f1d1d";
+    }
+
+    function iconeMeteo(code) {
+      const codes = {
+        0: "☀️",
+        1: "🌤️",
+        2: "⛅",
+        3: "☁️",
+        45: "🌫️",
+        48: "🌫️",
+        51: "🌦️",
+        53: "🌦️",
+        55: "🌧️",
+        61: "🌧️",
+        63: "🌧️",
+        65: "🌧️",
+        71: "🌨️",
+        73: "🌨️",
+        75: "❄️",
+        80: "🌦️",
+        81: "🌧️",
+        82: "⛈️",
+        95: "⛈️",
+        96: "⛈️",
+        99: "⛈️"
+      };
+
+      return codes[code] || "🌡️";
+    }
+
+    function texteVent(ville) {
+      if (ville.rafales_kmh && ville.rafales_kmh > 50) {
+        return ` 💨 ${ville.rafales_kmh} km/h`;
+      }
+
+      return "";
+    }
+
+    function popupVille(ville) {
+      return `
+        <strong>${ville.ville}</strong><br>
+        🌡️ Température : ${ville.temperature ?? "N/A"} °C<br>
+        🌧️ Pluie : ${ville.pluie_mm ?? "N/A"} mm<br>
+        💨 Rafales : ${ville.rafales_kmh ?? "N/A"} km/h<br>
+        ⚠️ Risque : ${ville.risque ?? "N/A"}
+      `;
+    }
+
+    function afficherCarte(villes) {
+      markersLayer.clearLayers();
+
+      villes.forEach((ville) => {
+        const marker = L.circleMarker([ville.lat, ville.lon], {
+          radius: 12,
+          color: couleurSelonTemperature(ville.temperature),
+          fillColor: couleurSelonTemperature(ville.temperature),
+          fillOpacity: 0.85,
+          weight: 2
+        });
+
+        marker
+          .addTo(markersLayer)
+          .bindTooltip(
+            `${ville.ville} ${iconeMeteo(ville.code_meteo)} ${ville.temperature ?? "N/A"}°C${texteVent(ville)}`,
+            {
+              direction: "top",
+              permanent: true,
+              className: "city-label"
+            }
+          )
+          .bindPopup(popupVille(ville));
+      });
+    }
+
+    function afficherTableau(villes) {
+      const tbody = document.getElementById("villes-table");
+      tbody.innerHTML = "";
+
+      villes.forEach((ville) => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td>${ville.ville}</td>
+          <td>${ville.temperature ?? "N/A"} °C</td>
+          <td>${ville.pluie_mm ?? "N/A"} mm</td>
+          <td>${ville.rafales_kmh ?? "N/A"} km/h</td>
+          <td>${ville.risque ?? "N/A"}</td>
+        `;
+
+        tr.addEventListener("click", () => {
+          map.setView([ville.lat, ville.lon], 10);
+        });
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function chargerMeteoSimple() {
+      const error = document.getElementById("error");
+      const resume = document.getElementById("resume");
+
+      error.textContent = "";
+      resume.textContent = "Chargement des données météo...";
+
+      const meteoResponse = await fetch(`${API_BASE_URL}/meteo/rennes`);
+
+      if (!meteoResponse.ok) {
+        throw new Error("Erreur API météo Rennes");
+      }
+
+      const meteo = await meteoResponse.json();
+
+      document.getElementById("ville").textContent = meteo.ville;
+      document.getElementById("temperature").textContent = `${meteo.temperature}°C`;
+      document.getElementById("pluie").textContent = `${meteo.pluie_mm} mm`;
+      document.getElementById("rafales").textContent = `${meteo.rafales_kmh} km/h`;
+      document.getElementById("risque").textContent = meteo.risque;
+
+      resume.textContent = "Données météo chargées. Génération du résumé IA...";
+    }
+
+    async function chargerResumeIA() {
+      const resume = document.getElementById("resume");
+
+      try {
+        const resumeResponse = await fetch(`${API_BASE_URL}/meteo/rennes/resume`);
+
+        if (!resumeResponse.ok) {
+          throw new Error("Erreur API résumé IA");
+        }
+
+        const dataResume = await resumeResponse.json();
+
+        if (dataResume.error) {
+          throw new Error(dataResume.error);
+        }
+
+        resume.textContent = dataResume.resume;
+      } catch (err) {
+        resume.textContent = "Résumé IA indisponible pour le moment.";
+        console.error("Erreur Ollama :", err);
+      }
+    }
+
+    async function chargerCarteBretagne() {
+      const error = document.getElementById("error");
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/meteo/bretagne`);
+
+        if (!response.ok) {
+          throw new Error("Erreur API carte Bretagne");
+        }
+
+        const villes = await response.json();
+
+        afficherCarte(villes);
+        afficherTableau(villes);
+      } catch (err) {
+        error.textContent = "Erreur carte : " + err.message;
+      }
+    }
+
+    function actualiserTout() {
+      chargerMeteoSimple()
+        .then(() => chargerResumeIA())
+        .catch((err) => {
+          document.getElementById("error").textContent = "Erreur : " + err.message;
+          document.getElementById("resume").textContent = "Impossible de charger la météo de Rennes.";
+        });
+
+      chargerCarteBretagne();
+    }
+
+    initMap();
+    actualiserTout();
+
+    setInterval(() => {
+      actualiserTout();
+    }, 300000);
+  </script>
+</body>
+</html>

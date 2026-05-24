@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Météo Bretagne IA</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #38bdf8;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .stat {
+      background: #1e293b;
+      padding: 16px;
+      border-radius: 12px;
+    }
+
+    .label {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .value {
+      font-size: 26px;
+      font-weight: bold;
+      margin-top: 8px;
+    }
+
+    .resume {
+      background: #020617;
+      padding: 18px;
+      border-radius: 12px;
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+
+    button {
+      margin-top: 20px;
+      background: #0284c7;
+      color: white;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #0369a1;
+    }
+
+    .error {
+      color: #f87171;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>🌦️ Météo Bretagne IA</h1>
+      <p>Prévision locale générée avec FastAPI, Python et Ollama.</p>
+
+      <div class="grid">
+        <div class="stat">
+          <div class="label">Ville</div>
+          <div class="value" id="ville">...</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Température</div>
+          <div class="value" id="temperature">...</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Pluie</div>
+          <div class="value" id="pluie">...</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Rafales</div>
+          <div class="value" id="rafales">...</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Risque</div>
+          <div class="value" id="risque">...</div>
+        </div>
+      </div>
+
+      <h2>Résumé IA</h2>
+      <div class="resume" id="resume">Chargement...</div>
+
+      <button onclick="chargerMeteo()">Actualiser</button>
+      <div class="error" id="error"></div>
+    </div>
+  </div>
+
+<script>
+async function chargerMeteo() {
+    const error = document.getElementById("error");
+    const resume = document.getElementById("resume");
+
+    error.textContent = "";
+    resume.textContent = "Chargement des données météo...";
+
+    try {
+    // 1) Charger rapidement les données météo simples
+    const meteoResponse = await fetch("http://127.0.0.1:8001/meteo/rennes");
+
+    if (!meteoResponse.ok) {
+        throw new Error("Erreur API météo");
+    }
+
+    const meteo = await meteoResponse.json();
+
+    document.getElementById("ville").textContent = meteo.ville;
+    document.getElementById("temperature").textContent = meteo.temperature + "°C";
+    document.getElementById("pluie").textContent = meteo.pluie_mm + " mm";
+    document.getElementById("rafales").textContent = meteo.rafales_kmh + " km/h";
+    document.getElementById("risque").textContent = meteo.risque;
+
+    // 2) Charger ensuite le résumé IA
+    resume.textContent = "Génération du résumé IA avec Ollama...";
+
+    const resumeResponse = await fetch("http://127.0.0.1:8001/meteo/rennes/resume");
+
+    if (!resumeResponse.ok) {
+        throw new Error("Erreur API résumé");
+    }
+
+    const dataResume = await resumeResponse.json();
+
+    if (dataResume.error) {
+        throw new Error(dataResume.error);
+    }
+
+    resume.textContent = dataResume.resume;
+    } catch (err) {
+    error.textContent = "Erreur : " + err.message;
+    resume.textContent = "Les données météo simples peuvent fonctionner, mais le résumé IA a échoué.";
+    }
+}
+
+chargerMeteo();
+</script>
+</body>
+</html>
