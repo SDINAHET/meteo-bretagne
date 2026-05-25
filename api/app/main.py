@@ -535,6 +535,6 @@ Explique simplement cette météo en français en 3 phrases maximum.
 
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(sauvegarder_snapshot_meteo, "interval", minutes=15)
+# scheduler.add_job(sauvegarder_snapshot_meteo, "interval", minutes=15)
 scheduler.add_job(sauvegarder_snapshot_meteo, "cron", minute="0,15,30,45")
 scheduler.start()

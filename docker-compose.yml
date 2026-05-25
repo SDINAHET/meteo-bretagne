@@ -39,9 +39,14 @@ services:
       - "8001:8001"
     environment:
       DATABASE_URL: postgresql://meteo_user:meteo_password@postgres_meteo:5432/meteo_bretagne
-      OLLAMA_HOST: http://172.17.0.1:11434
+      # OLLAMA_HOST: http://172.17.0.1:11434
+      # OLLAMA_HOST: http://ollama:11434
+      # OLLAMA_HOST: http:/0.0.0.0:11434
+      OLLAMA_HOST: http://host.docker.internal:11434
+      # OLLAMA_HOST: http://127.0.0.1:11434
     depends_on:
       - postgres_meteo
+      # - ollama
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -56,5 +61,17 @@ services:
     depends_on:
       - api_meteo
 
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: ollama_meteo
+  #   restart: unless-stopped
+  #   ports:
+  #     - "11434:11434"
+  #   environment:
+  #     OLLAMA_HOST: 0.0.0.0:11434
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+
 volumes:
   postgres_meteo_data:
+  # ollama_data:

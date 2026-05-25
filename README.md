@@ -190,3 +190,29 @@ root@UID7E:/mnt/d/Users/steph/Documents/projet_meteo/meteo-bretagne-ia# curl htt
 ![alt text](image-13.png)
 http://localhost:5500/index.html
 
+
+sudo nano /etc/apache2/sites-available/meteo-bretagne.loto-tracker.fr.conf
+
+Active :
+sudo a2enmod proxy proxy_http
+sudo a2ensite meteo-bretagne.loto-tracker.fr.conf
+sudo systemctl reload apache2
+
+Puis SSL :
+sudo certbot --apache -d xn--mto-bretagne-bebb.loto-tracker.fr
+
+Le vrai nom technique du domaine accentué est :
+xn--mto-bretagne-bebb.loto-tracker.fr
+
+
+Pour ton erreur API sur le domaine, il faut surtout corriger le front :
+
+const API_BASE_URL = "";
+
+Puis redéployer le conteneur frontend :
+
+cd ~/meteo/meteo-bretagne
+docker compose up --build -d
+
+pkill ollama
+OLLAMA_HOST=0.0.0.0:11434 ollama serve

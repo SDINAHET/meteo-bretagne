@@ -1,0 +1,31 @@
+# /venv
+# /app/_pycache__
+# /__pycache__
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtualenv
+venv/
+.venv/
+
+# VSCode
+.vscode/
+
+# Logs
+*.log
+
+# Env
+.env
+
+# Python cache folders
+*/__pycache__/
+
+# Docker
+*.pid
+
+# OS
+.DS_Store
+Thumbs.db
