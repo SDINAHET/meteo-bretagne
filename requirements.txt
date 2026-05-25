@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+requests
+ollama
+SQLAlchemy
+psycopg2-binary
+apscheduler

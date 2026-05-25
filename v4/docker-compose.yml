@@ -1,0 +1,60 @@
+# services:
+#   postgres_meteo:
+#     image: postgres:16
+#     container_name: postgres_meteo_bretagne
+#     restart: unless-stopped
+#     environment:
+#       POSTGRES_DB: meteo_bretagne
+#       POSTGRES_USER: meteo_user
+#       POSTGRES_PASSWORD: meteo_password
+#     ports:
+#       - "5440:5432"
+#     volumes:
+#       - postgres_meteo_data:/var/lib/postgresql/data
+
+# volumes:
+#   postgres_meteo_data:
+
+services:
+  postgres_meteo:
+    image: postgres:16
+    container_name: postgres_meteo_bretagne
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: meteo_bretagne
+      POSTGRES_USER: meteo_user
+      POSTGRES_PASSWORD: meteo_password
+    ports:
+      - "5440:5432"
+    volumes:
+      - postgres_meteo_data:/var/lib/postgresql/data
+
+  api_meteo:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: api_meteo_bretagne
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: postgresql://meteo_user:meteo_password@postgres_meteo:5432/meteo_bretagne
+      OLLAMA_HOST: http://172.17.0.1:11434
+    depends_on:
+      - postgres_meteo
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  frontend_meteo:
+    image: nginx:alpine
+    container_name: frontend_meteo_bretagne
+    restart: unless-stopped
+    ports:
+      - "5500:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - api_meteo
+
+volumes:
+  postgres_meteo_data:
