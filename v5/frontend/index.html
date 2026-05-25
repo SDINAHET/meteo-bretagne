@@ -1,0 +1,953 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Météo Bretagne IA v4</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: rgba(15, 23, 42, 0.92);
+      --panel2: rgba(30, 41, 59, 0.82);
+      --line: rgba(148, 163, 184, 0.22);
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --blue: #38bdf8;
+      --blue2: #0284c7;
+      --green: #22c55e;
+      --orange: #fb923c;
+      --red: #ef4444;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, .18), transparent 32%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, .10), transparent 30%),
+        linear-gradient(135deg, #020617, var(--bg));
+    }
+
+    .container {
+      width: min(1380px, calc(100% - 28px));
+      margin: 24px auto 60px;
+    }
+
+    .hero {
+      border: 1px solid var(--line);
+      background: rgba(2, 6, 23, .72);
+      backdrop-filter: blur(14px);
+      border-radius: 26px;
+      padding: 24px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.34);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    h1 { margin: 0; color: var(--blue); font-size: clamp(28px, 4vw, 48px); }
+    h2 { margin: 28px 0 10px; }
+    p { color: var(--muted); line-height: 1.55; }
+
+    .badge {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid rgba(56, 189, 248, .35);
+      background: rgba(56, 189, 248, .10);
+      color: #bae6fd;
+      padding: 9px 12px;
+      border-radius: 999px;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(150px, 1fr));
+      gap: 14px;
+      margin: 22px 0;
+    }
+
+    .stat, .panel {
+      background: var(--panel2);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .label { color: var(--muted); font-size: 13px; }
+    .value { margin-top: 8px; font-size: 25px; font-weight: 800; }
+
+    .resume {
+      background: rgba(2, 6, 23, .86);
+      border: 1px solid var(--line);
+      padding: 18px;
+      border-radius: 18px;
+      line-height: 1.65;
+      white-space: pre-line;
+    }
+
+    .actions, .tabs, .subtabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    button {
+      border: 1px solid rgba(148, 163, 184, .25);
+      background: #1e293b;
+      color: white;
+      padding: 11px 15px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 800;
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); background: #334155; }
+    button.primary, button.active { background: var(--blue2); border-color: var(--blue); }
+    button.danger { background: rgba(239, 68, 68, .2); border-color: rgba(239, 68, 68, .45); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .layout-two {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(340px, .65fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    #map, #radar-map, #forecast-map, #history-map {
+      height: 620px;
+      width: 100%;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      overflow: hidden;
+      background: #020617;
+    }
+
+    #radar-map { height: 680px; }
+
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #020617; color: #e5e7eb; }
+
+    .city-label {
+      background: #020617;
+      color: #e5e7eb;
+      border: 1px solid var(--blue);
+      border-radius: 12px;
+      padding: 5px 9px;
+      font-weight: 800;
+      box-shadow: 0 6px 18px rgba(0,0,0,.42);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      overflow: hidden;
+      border-radius: 16px;
+      background: rgba(2, 6, 23, .6);
+    }
+
+    th, td {
+      padding: 11px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th { color: #bfdbfe; background: rgba(30, 41, 59, .9); }
+    tr:hover { background: rgba(51, 65, 85, .55); cursor: pointer; }
+
+    .timeline {
+      margin-top: 16px;
+      background: rgba(2, 6, 23, .68);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 15px;
+    }
+
+    input[type="range"] { width: 100%; }
+    .small { color: var(--muted); font-size: 14px; }
+    .error { color: #fca5a5; font-weight: 700; margin-top: 10px; }
+
+    .forecast-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .forecast-card {
+      border: 1px solid var(--line);
+      background: rgba(15, 23, 42, .8);
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    .forecast-card strong { color: #e0f2fe; }
+
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+      .layout-two { grid-template-columns: 1fr; }
+      #map, #radar-map, #forecast-map, #history-map { height: 470px; }
+    }
+
+    @media (max-width: 560px) {
+      .container { width: min(100% - 16px, 1380px); margin-top: 8px; }
+      .hero { padding: 14px; border-radius: 18px; }
+      .grid { grid-template-columns: 1fr; }
+      button { width: 100%; }
+      #map, #radar-map, #forecast-map, #history-map { height: 380px; }
+      th, td { font-size: 12px; padding: 9px 7px; }
+    }
+
+    .map-header-info {
+      display: inline-flex;
+      margin: 8px 0 12px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, .12);
+      border: 1px solid rgba(56, 189, 248, .35);
+      color: #bae6fd;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .radar-legend {
+      background: rgba(2, 6, 23, .88);
+      color: #e5e7eb;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, .35);
+      font-size: 13px;
+      line-height: 1.5;
+      box-shadow: 0 8px 24px rgba(0,0,0,.35);
+    }
+
+    .radar-legend strong {
+      display: block;
+      margin-bottom: 6px;
+      color: #bae6fd;
+    }
+
+    .radar-legend span {
+      display: inline-block;
+      width: 18px;
+      height: 10px;
+      border-radius: 999px;
+      margin-right: 7px;
+    }
+
+    .radar-time-box {
+      background: rgba(2, 6, 23, .88);
+      color: #bae6fd;
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(56, 189, 248, .35);
+      font-size: 13px;
+      font-weight: 800;
+      box-shadow: 0 8px 24px rgba(0,0,0,.35);
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <section class="hero">
+      <div class="topbar">
+        <div>
+          <h1>🌦️ Météo Bretagne v4</h1>
+          <p>Carte actuelle, prévisions J+1/J+2/J+3, historique 24h et radar pluie France/Bretagne.</p>
+        </div>
+        <div class="badge" id="status-badge">● Connexion API locale</div>
+      </div>
+
+      <div class="grid">
+        <div class="stat"><div class="label">Ville témoin</div><div class="value" id="ville">...</div></div>
+        <div class="stat"><div class="label">Température</div><div class="value" id="temperature">...</div></div>
+        <div class="stat"><div class="label">Pluie</div><div class="value" id="pluie">...</div></div>
+        <div class="stat"><div class="label">Rafales</div><div class="value" id="rafales">...</div></div>
+        <div class="stat"><div class="label">Risque</div><div class="value" id="risque">...</div></div>
+      </div>
+
+      <h2>Résumé IA</h2>
+      <div class="resume" id="resume">Chargement...</div>
+
+      <div class="actions">
+        <button class="primary" onclick="actualiserTout()">Actualiser maintenant</button>
+        <!-- <button onclick="forcerSnapshot()">Sauvegarder un snapshot historique</button> -->
+      </div>
+      <div class="error" id="error"></div>
+
+      <nav class="tabs">
+        <button class="tab-btn active" onclick="afficherOnglet('actuel', this)">Actuel</button>
+        <button class="tab-btn" onclick="afficherOnglet('previsions', this)">Prévisions carte J+1/J+2/J+3</button>
+        <button class="tab-btn" onclick="afficherOnglet('historique', this)">Historique 24h</button>
+        <button class="tab-btn" onclick="afficherOnglet('radar', this)">Radar pluie France</button>
+      </nav>
+
+      <section id="onglet-actuel" class="tab-content active">
+        <div class="layout-two">
+          <div>
+            <h2>Carte météo Bretagne</h2>
+            <div class="map-header-info">
+              <span id="actualise-carte">Actualisé le : ...</span>
+            </div>
+            <p>Survole une ville pour voir la température, clique pour zoomer.</p>
+            <div id="map"></div>
+          </div>
+          <!-- <div class="stat">
+            <div class="label">Dernière actualisation</div>
+            <div class="value" id="actualise-le">...</div>
+          </div> -->
+          <div class="panel">
+            <h2>Villes</h2>
+            <table>
+              <thead><tr><th>Ville</th><th>T°</th><th>Pluie</th><th>Rafales</th><th>Risque</th></tr></thead>
+              <tbody id="villes-table"><tr><td colspan="5">Chargement...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="onglet-previsions" class="tab-content">
+        <h2>Prévisions par carte</h2>
+        <p class="small">Onglets J+1/J+2/J+3 + matin, midi, après-midi, soir, nuit.</p>
+
+        <div class="subtabs" id="day-tabs"></div>
+        <div class="subtabs" id="moment-tabs"></div>
+
+        <div class="layout-two">
+          <div id="forecast-map"></div>
+          <div class="panel">
+            <h2 id="forecast-title">Prévisions</h2>
+            <div class="forecast-cards" id="forecast-cards"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="onglet-historique" class="tab-content">
+        <h2>Historique 24h PostgreSQL</h2>
+        <p class="small">Lecture automatique possible sur la carte après clic sur Play.</p>
+
+        <div class="layout-two">
+          <div>
+            <div id="history-map"></div>
+            <div class="timeline">
+              <button class="primary" id="history-play-btn" onclick="toggleHistoriquePlay()">▶ Play historique</button>
+              <button onclick="chargerHistorique24h()">Recharger</button>
+              <label for="history-range">Timeline historique</label>
+              <input id="history-range" type="range" min="0" max="0" value="0" oninput="afficherSnapshotHistorique()" />
+              <p id="history-current">Aucune donnée historique chargée.</p>
+            </div>
+          </div>
+          <div class="panel">
+            <h2>Données</h2>
+            <table>
+              <thead><tr><th>Date</th><th>Ville</th><th>T°</th><th>Pluie</th><th>Rafales</th></tr></thead>
+              <tbody id="historique-table"><tr><td colspan="5">Chargement...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="onglet-radar" class="tab-content">
+        <h2>Radar pluie RainViewer</h2>
+        <p class="small">Le radar est volontairement dézoomé à l’échelle France pour mieux voir les nuages et masses de pluie avant leur arrivée en Bretagne.</p>
+        <div id="radar-map"></div>
+        <div class="timeline">
+          <button class="primary" id="radar-play-btn" onclick="toggleRadarPlay()">▶ Play radar</button>
+          <button onclick="zoomRadarFrance()">Vue France</button>
+          <button onclick="zoomRadarBretagne()">Vue Bretagne</button>
+          <label for="radar-range">Timeline radar pluie</label>
+          <input id="radar-range" type="range" min="0" max="0" value="0" oninput="afficherFrameRadar()" />
+          <p id="radar-current">Chargement radar...</p>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    const API_BASE_URL = "http://127.0.0.1:8001";
+    const DAYS = ["J+1", "J+2", "J+3"];
+    const MOMENTS = ["matin", "midi", "apres-midi", "soir", "nuit"];
+    const MOMENT_LABELS = { "matin": "Matin", "midi": "Midi", "apres-midi": "Après-midi", "soir": "Soir", "nuit": "Nuit" };
+    const MOMENT_ALIASES = { "après-midi": "apres-midi", "apres_midi": "apres-midi", "apres-midi": "apres-midi" };
+
+    function formatOpenMeteoLocal(dateString) {
+      return new Date(dateString).toLocaleString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    /*function formatUtcToFrance(dateString) {
+      return new Date(dateString + "Z").toLocaleString("fr-FR", {
+        timeZone: "Europe/Paris",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }*/
+    function formatUtcToFrance(dateString) {
+      return new Date(dateString).toLocaleString("fr-FR", {
+        timeZone: "Europe/Paris",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    let map, radarMap, forecastMap, historyMap;
+    let markersLayer, forecastLayer, historyLayer;
+    let radarLayer = null;
+    let radarFrames = [];
+    let radarTimer = null;
+    let historiqueTimer = null;
+    let historiqueData = [];
+    let forecastData = [];
+    let selectedDay = "J+1";
+    let selectedMoment = "matin";
+    let radarPreloaded = {};
+    let radarLegend = null;
+    let radarTimeControl = null;
+    let historyTimeControl = null;
+    let historySnapshots = [];
+
+    function api(path) { return `${API_BASE_URL}${path}`; }
+    function setStatus(text, ok = true) {
+      const badge = document.getElementById("status-badge");
+      badge.textContent = `${ok ? "●" : "●"} ${text}`;
+      badge.style.borderColor = ok ? "rgba(34,197,94,.55)" : "rgba(239,68,68,.55)";
+      badge.style.color = ok ? "#bbf7d0" : "#fecaca";
+    }
+
+    function initMaps() {
+      map = L.map("map").setView([48.12, -2.85], 8);
+      forecastMap = L.map("forecast-map").setView([48.12, -2.85], 8);
+      historyMap = L.map("history-map").setView([48.12, -2.85], 8);
+      /*radarMap = L.map("radar-map").setView([46.8, 2.6], 6);*/
+      radarMap = L.map("radar-map", {
+        minZoom: 5,
+        maxZoom: 10
+      }).setView([46.8, 2.6], 6);
+
+      [map, forecastMap, historyMap, radarMap].forEach((m) => {
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(m);
+      });
+
+      markersLayer = L.layerGroup().addTo(map);
+      forecastLayer = L.layerGroup().addTo(forecastMap);
+      historyLayer = L.layerGroup().addTo(historyMap);
+    }
+
+    function afficherOnglet(nom, bouton) {
+      document.querySelectorAll(".tab-content").forEach(s => s.classList.remove("active"));
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById(`onglet-${nom}`).classList.add("active");
+      bouton.classList.add("active");
+
+      setTimeout(() => {
+        if (nom === "actuel") map.invalidateSize();
+        if (nom === "previsions") { forecastMap.invalidateSize(); chargerPrevisions(); }
+        if (nom === "historique") { historyMap.invalidateSize(); chargerHistorique24h(); }
+        if (nom === "radar") { radarMap.invalidateSize(); chargerRadarPluie(); zoomRadarFrance(); }
+      }, 200);
+    }
+
+
+
+    function couleurSelonTemperature(temp) {
+      if (temp === null || temp === undefined || Number.isNaN(Number(temp))) return "#94a3b8";
+      temp = Number(temp);
+      if (temp < 0) return "#38bdf8";
+      if (temp < 8) return "#67e8f9";
+      if (temp < 14) return "#22c55e";
+      if (temp < 20) return "#eab308";
+      if (temp < 27) return "#fb923c";
+      if (temp < 34) return "#ef4444";
+      return "#7f1d1d";
+    }
+
+    function iconeMeteo(code) {
+      const c = Number(code);
+      if ([0].includes(c)) return "☀️";
+      if ([1,2].includes(c)) return "🌤️";
+      if ([3].includes(c)) return "☁️";
+      if ([45,48].includes(c)) return "🌫️";
+      if ([51,53,55,61,63,65,80,81].includes(c)) return "🌧️";
+      if ([71,73,75,77,85,86].includes(c)) return "🌨️";
+      if ([82,95,96,99].includes(c)) return "⛈️";
+      return "🌡️";
+    }
+
+    function popupVille(v) {
+      return `<strong>${v.ville}</strong><br>🌡️ ${v.temperature ?? "N/A"} °C<br>🌧️ ${v.pluie_mm ?? "N/A"} mm<br>💨 ${v.rafales_kmh ?? "N/A"} km/h<br>⚠️ ${v.risque ?? "N/A"}`;
+    }
+
+    function addCityMarker(layer, ville, targetMap, permanent = true) {
+      const temp = ville.temperature ?? ville.temperature_2m;
+      const marker = L.circleMarker([ville.lat, ville.lon], {
+        radius: temp >= 25 ? 15 : 12,
+        color: couleurSelonTemperature(temp),
+        fillColor: couleurSelonTemperature(temp),
+        fillOpacity: .92,
+        weight: 3
+      }).addTo(layer);
+
+      marker.bindTooltip(`${ville.ville} ${iconeMeteo(ville.code_meteo)} ${temp ?? "N/A"}°C`, {
+        direction: "top", permanent, className: "city-label"
+      });
+      marker.bindPopup(popupVille({ ...ville, temperature: temp }));
+      marker.on("click", () => targetMap.setView([ville.lat, ville.lon], 10));
+      return marker;
+    }
+
+    function afficherCarteActuelle(villes) {
+      markersLayer.clearLayers();
+      villes.forEach(v => addCityMarker(markersLayer, v, map, true));
+    }
+
+    function afficherTableau(villes) {
+      const tbody = document.getElementById("villes-table");
+      tbody.innerHTML = "";
+      villes.forEach(v => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${v.ville}</td><td>${v.temperature ?? "N/A"} °C</td><td>${v.pluie_mm ?? "N/A"} mm</td><td>${v.rafales_kmh ?? "N/A"} km/h</td><td>${v.risque ?? "N/A"}</td>`;
+        tr.onclick = () => map.setView([v.lat, v.lon], 10);
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function chargerMeteoSimple() {
+      document.getElementById("error").textContent = "";
+      document.getElementById("resume").textContent = "Chargement des données météo...";
+      const r = await fetch(api("/meteo/rennes"));
+      if (!r.ok) throw new Error("Erreur API météo Rennes");
+      const m = await r.json();
+      document.getElementById("ville").textContent = m.ville ?? "Rennes";
+      document.getElementById("temperature").textContent = `${m.temperature ?? "N/A"}°C`;
+      document.getElementById("pluie").textContent = `${m.pluie_mm ?? "N/A"} mm`;
+      document.getElementById("rafales").textContent = `${m.rafales_kmh ?? "N/A"} km/h`;
+      document.getElementById("risque").textContent = m.risque ?? "N/A";
+      setStatus("API connectée", true);
+
+      document.getElementById("actualise-carte").textContent =
+        m.actualise_le
+          ? `Actualisé le : ${new Date(m.actualise_le).toLocaleString("fr-FR")}`
+          : "Actualisé le : N/A";
+
+      /*document.getElementById("actualise-carte").textContent =
+        m.actualise_le
+          ? `Actualisé le : ${formatDateFrance(m.actualise_le)}`
+          : "Actualisé le : N/A";*/
+    }
+
+
+    async function chargerResumeIA() {
+      try {
+        const r = await fetch(api("/meteo/rennes/resume"));
+        if (!r.ok) throw new Error("Erreur API résumé IA");
+        const data = await r.json();
+        document.getElementById("resume").textContent = data.resume || "Résumé IA indisponible pour le moment.";
+      } catch (e) {
+        document.getElementById("resume").textContent = "Résumé IA indisponible pour le moment, mais les données météo fonctionnent.";
+      }
+    }
+
+    async function chargerCarteBretagne() {
+      const r = await fetch(api("/api/meteo/bretagne"));
+      if (!r.ok) throw new Error("Erreur API carte Bretagne");
+      const villes = await r.json();
+      afficherCarteActuelle(villes);
+      afficherTableau(villes);
+    }
+
+    function normaliserMoment(moment) {
+      const m = String(moment || "").toLowerCase().trim();
+      return MOMENT_ALIASES[m] || m;
+    }
+
+    function buildForecastTabs() {
+      document.getElementById("day-tabs").innerHTML = DAYS.map(d => `<button class="${d === selectedDay ? "active" : ""}" onclick="selectDay('${d}', this)">${d}</button>`).join("");
+      document.getElementById("moment-tabs").innerHTML = MOMENTS.map(m => `<button class="${m === selectedMoment ? "active" : ""}" onclick="selectMoment('${m}', this)">${MOMENT_LABELS[m]}</button>`).join("");
+    }
+
+    function selectDay(day) { selectedDay = day; buildForecastTabs(); afficherPrevisionSelection(); }
+    function selectMoment(moment) { selectedMoment = moment; buildForecastTabs(); afficherPrevisionSelection(); }
+
+    async function chargerPrevisions() {
+      if (forecastData.length) { afficherPrevisionSelection(); return; }
+      document.getElementById("forecast-cards").innerHTML = "Chargement...";
+      buildForecastTabs();
+      try {
+        const r = await fetch(api("/api/meteo/previsions/bretagne"));
+        if (!r.ok) throw new Error("Erreur prévisions");
+        forecastData = await r.json();
+        afficherPrevisionSelection();
+      } catch (e) {
+        document.getElementById("forecast-cards").innerHTML = `<p class="error">Erreur : ${e.message}</p>`;
+      }
+    }
+
+    function ajouterHeureHistorique() {
+      if (historyTimeControl) return;
+
+      historyTimeControl = L.control({ position: "topright" });
+
+      historyTimeControl.onAdd = function () {
+        const div = L.DomUtil.create("div", "radar-time-box");
+        div.id = "history-time-box";
+        div.textContent = "Historique : ...";
+        return div;
+      };
+
+      historyTimeControl.addTo(historyMap);
+    }
+
+    function afficherPrevisionSelection() {
+      forecastLayer.clearLayers();
+      const cards = document.getElementById("forecast-cards");
+      cards.innerHTML = "";
+      document.getElementById("forecast-title").textContent = `${selectedDay} — ${MOMENT_LABELS[selectedMoment]}`;
+
+      const rows = [];
+      forecastData.forEach(ville => {
+        const prev = (ville.previsions || []).find(p => p.jour === selectedDay && normaliserMoment(p.moment) === selectedMoment);
+        if (prev) rows.push({ ...prev, ville: ville.ville, lat: ville.lat, lon: ville.lon, temperature: prev.temperature });
+      });
+
+      if (!rows.length) {
+        cards.innerHTML = `<p class="small">Aucune donnée pour ${selectedDay} / ${MOMENT_LABELS[selectedMoment]}. Vérifie que le backend renvoie aussi après-midi et nuit.</p>`;
+        return;
+      }
+
+      rows.forEach(v => {
+        addCityMarker(forecastLayer, v, forecastMap, true);
+        const card = document.createElement("div");
+        card.className = "forecast-card";
+        card.innerHTML = `<strong>${v.ville}</strong><br>${iconeMeteo(v.code_meteo)} ${v.temperature ?? "N/A"} °C<br>🌧️ ${v.pluie_mm ?? "N/A"} mm<br>💨 ${v.rafales_kmh ?? "N/A"} km/h<br><span class="small">${String(v.heure || "").replace("T", " ")}</span>`;
+        card.onclick = () => forecastMap.setView([v.lat, v.lon], 10);
+        cards.appendChild(card);
+      });
+    }
+
+    async function chargerHistorique24h() {
+      const tbody = document.getElementById("historique-table");
+      tbody.innerHTML = `<tr><td colspan="5">Chargement...</td></tr>`;
+      try {
+        const r = await fetch(api("/api/meteo/historique/24h"));
+        if (!r.ok) throw new Error("Erreur historique 24h");
+        historiqueData = await r.json();
+
+        historySnapshots = [...new Set(
+          historiqueData.map(l => l.created_at.slice(0, 16))
+        )];
+
+        document.getElementById("history-range").max = Math.max(historySnapshots.length - 1, 0);
+        document.getElementById("history-range").value = 0;
+        afficherHistoriqueTable();
+        ajouterHeureHistorique();
+        afficherSnapshotHistorique();
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5">Erreur : ${e.message}</td></tr>`;
+      }
+    }
+
+    function afficherHistoriqueTable() {
+      const tbody = document.getElementById("historique-table");
+      tbody.innerHTML = "";
+      if (!historiqueData.length) {
+        tbody.innerHTML = `<tr><td colspan="5">Aucune donnée. Clique sur “Sauvegarder un snapshot historique”.</td></tr>`;
+        return;
+      }
+      historiqueData.slice(0, 80).forEach(l => {
+        /*const date = new Date(l.created_at).toLocaleString("fr-FR");*/
+        const date = formatUtcToFrance(l.created_at);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${date}</td><td>${l.ville}</td><td>${l.temperature ?? "N/A"} °C</td><td>${l.pluie_mm ?? "N/A"} mm</td><td>${l.rafales_kmh ?? "N/A"} km/h</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function ajouterLegendeRadar() {
+      if (radarLegend) return;
+
+      radarLegend = L.control({ position: "bottomright" });
+
+      radarLegend.onAdd = function () {
+        const div = L.DomUtil.create("div", "radar-legend");
+        div.innerHTML = `
+          <strong>Radar pluie</strong>
+          <div><span style="background:#8dd6ff"></span> Très faible : ~0.1 à 0.5 mm/h</div>
+          <div><span style="background:#38bdf8"></span> Faible : ~0.5 à 2 mm/h</div>
+          <div><span style="background:#0284c7"></span> Modérée : ~2 à 10 mm/h</div>
+          <div><span style="background:#facc15"></span> Forte : ~10 à 25 mm/h</div>
+          <div><span style="background:#fb923c"></span> Très forte : ~25 à 50 mm/h</div>
+          <div><span style="background:#ef4444"></span> Intense / orage : > 50 mm/h</div>
+        `;
+        return div;
+      };
+
+      radarLegend.addTo(radarMap);
+    }
+
+    function ajouterHeureRadar() {
+      if (radarTimeControl) return;
+
+      radarTimeControl = L.control({ position: "topright" });
+
+      radarTimeControl.onAdd = function () {
+        const div = L.DomUtil.create("div", "radar-time-box");
+        div.id = "radar-time-box";
+        div.textContent = "Capture radar : ...";
+        return div;
+      };
+
+      radarTimeControl.addTo(radarMap);
+    }
+
+    function afficherSnapshotHistorique() {
+      historyLayer.clearLayers();
+
+      const current = document.getElementById("history-current");
+
+      if (!historiqueData.length || !historySnapshots.length) {
+        current.textContent = "Aucune donnée historique chargée.";
+        return;
+      }
+
+      const index = Number(document.getElementById("history-range").value);
+      const heureSelectionnee = historySnapshots[index];
+
+      const source = historiqueData.filter(l =>
+        l.created_at.slice(0, 16) === heureSelectionnee
+      );
+
+      if (!source.length) {
+        current.textContent = "Aucune donnée pour cet horaire.";
+        return;
+      }
+
+      const selected = source[0];
+      /*const date = new Date(selected.created_at).toLocaleString("fr-FR");*/
+      const date = formatUtcToFrance(selected.created_at);
+
+      const historyTimeBox = document.getElementById("history-time-box");
+      if (historyTimeBox) {
+        historyTimeBox.textContent = `Historique : ${date}`;
+      }
+
+      current.textContent =
+        `${date} — ${source.length} villes affichées`;
+
+      source.forEach(v => addCityMarker(historyLayer, v, historyMap, true));
+    }
+
+    function toggleHistoriquePlay() {
+      const btn = document.getElementById("history-play-btn");
+      if (historiqueTimer) {
+        clearInterval(historiqueTimer);
+        historiqueTimer = null;
+        btn.textContent = "▶ Play historique";
+        return;
+      }
+      if (!historiqueData.length) return;
+      btn.textContent = "⏸ Pause historique";
+      historiqueTimer = setInterval(() => {
+        const range = document.getElementById("history-range");
+        range.value = Number(range.value) >= Number(range.max) ? 0 : Number(range.value) + 1;
+        afficherSnapshotHistorique();
+      }, 1100);
+    }
+
+    /*async function forcerSnapshot() {
+      try {
+        const r = await fetch(api("/api/meteo/refresh"), { method: "POST" });
+        if (!r.ok) throw new Error("Erreur sauvegarde snapshot");
+        await chargerHistorique24h();
+      } catch (e) {
+        document.getElementById("error").textContent = "Erreur snapshot : " + e.message;
+      }
+    }*/
+
+    /*async function chargerRadarPluie() {
+      if (radarFrames.length) { afficherFrameRadar(); return; }
+      try {
+        const r = await fetch(api("/api/rainviewer/weather-maps"));
+        if (!r.ok) throw new Error("Erreur RainViewer");
+        const data = await r.json();
+        radarFrames = [...(data.radar?.past || []), ...(data.radar?.nowcast || [])];
+        const range = document.getElementById("radar-range");
+        range.max = Math.max(radarFrames.length - 1, 0);
+        range.value = Math.max((data.radar?.past || []).length - 1, 0);
+        afficherFrameRadar();
+      } catch (e) {
+        document.getElementById("radar-current").textContent = "Erreur radar : " + e.message;
+      }
+    }*/
+
+    async function chargerRadarPluie() {
+      try {
+        const r = await fetch(api("/api/rainviewer/weather-maps"));
+        if (!r.ok) throw new Error("Erreur RainViewer");
+
+        const data = await r.json();
+
+        const maintenant = Math.floor(Date.now() / 1000);
+        /*const limite12h = maintenant - (12 * 60 * 60);*/
+
+        radarFrames = [
+          ...(data.radar?.past || []),
+          ...(data.radar?.nowcast || [])
+        ];
+
+        const range = document.getElementById("radar-range");
+        range.max = Math.max(radarFrames.length - 1, 0);
+        /*range.value = Math.max((data.radar?.past || []).length - 1, 0);*/
+        range.value = Math.max(
+        radarFrames.filter(f => f.time <= maintenant).length - 1,
+          0
+        );
+
+        await prechargerRadarFrames();
+
+        ajouterHeureRadar();
+        ajouterLegendeRadar();
+        afficherFrameRadar();
+      } catch (e) {
+        document.getElementById("radar-current").textContent =
+          "Erreur radar : " + e.message;
+      }
+    }
+
+    async function prechargerRadarFrames() {
+      document.getElementById("radar-current").textContent =
+        "Préchargement radar en cours...";
+
+      radarPreloaded = {};
+
+      radarFrames.forEach(frame => {
+        /*const url = `https://tilecache.rainviewer.com${frame.path}/256/{z}/{x}/{y}/2/1_1.png`;*/
+        const url = `https://tilecache.rainviewer.com${frame.path}/256/{z}/{x}/{y}/6/1_1.png`;
+        /*radarPreloaded[frame.time] = L.tileLayer(url, {
+          opacity: 0,
+          attribution: "RainViewer"
+        }).addTo(radarMap);*/
+        radarPreloaded[frame.time] = L.tileLayer(url, {
+          opacity: 0,
+          attribution: "RainViewer",
+          maxNativeZoom: 7,
+          maxZoom: 10
+        }).addTo(radarMap);
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 1200));
+    }
+
+    /*function afficherFrameRadar() {
+      if (!radarFrames.length) { document.getElementById("radar-current").textContent = "Aucune frame radar disponible."; return; }
+      const frame = radarFrames[Number(document.getElementById("radar-range").value)];
+      if (radarLayer) radarMap.removeLayer(radarLayer);
+      radarLayer = L.tileLayer(`https://tilecache.rainviewer.com${frame.path}/256/{z}/{x}/{y}/2/1_1.png`, { opacity: .68, attribution: "RainViewer" }).addTo(radarMap);
+      document.getElementById("radar-current").textContent = `Radar pluie : ${new Date(frame.time * 1000).toLocaleString("fr-FR")}`;
+    }*/
+
+    function afficherFrameRadar() {
+      if (!radarFrames.length) {
+        document.getElementById("radar-current").textContent =
+          "Aucune frame radar disponible.";
+        return;
+      }
+
+      const frame = radarFrames[Number(document.getElementById("radar-range").value)];
+
+      const radarTime = new Date(frame.time * 1000).toLocaleString("fr-FR");
+
+      const radarTimeBox = document.getElementById("radar-time-box");
+      if (radarTimeBox) {
+        radarTimeBox.textContent = `Capture radar : ${radarTime}`;
+      }
+
+      document.getElementById("radar-current").textContent =
+        `Radar pluie : ${radarTime}`;
+
+      Object.values(radarPreloaded).forEach(layer => {
+        layer.setOpacity(0);
+      });
+
+      const layer = radarPreloaded[frame.time];
+
+      if (layer) {
+        layer.setOpacity(0.75);
+      }
+
+      /*document.getElementById("radar-current").textContent =
+        `Radar pluie : ${new Date(frame.time * 1000).toLocaleString("fr-FR")}`;*/
+    }
+
+    function toggleRadarPlay() {
+      const btn = document.getElementById("radar-play-btn");
+      if (radarTimer) {
+        clearInterval(radarTimer);
+        radarTimer = null;
+        btn.textContent = "▶ Play radar";
+        return;
+      }
+      if (!radarFrames.length) return;
+      btn.textContent = "⏸ Pause radar";
+      radarTimer = setInterval(() => {
+        const range = document.getElementById("radar-range");
+        range.value = Number(range.value) >= Number(range.max) ? 0 : Number(range.value) + 1;
+        afficherFrameRadar();
+      }, 500);
+    }
+
+    function zoomRadarFrance() { radarMap.setView([46.8, 2.6], 6); }
+    function zoomRadarBretagne() { radarMap.setView([48.12, -2.85], 8); }
+
+    async function actualiserTout() {
+      try {
+        await chargerMeteoSimple();
+        chargerResumeIA();
+        await chargerCarteBretagne();
+      } catch (e) {
+        setStatus("API non joignable", false);
+        document.getElementById("error").textContent = "Erreur : " + e.message;
+        document.getElementById("resume").textContent = "Impossible de charger l’API locale. Vérifie que FastAPI tourne sur http://127.0.0.1:8001.";
+      }
+    }
+
+    initMaps();
+    buildForecastTabs();
+    actualiserTout();
+    setInterval(actualiserTout, 600000);
+  </script>
+</body>
+</html>
