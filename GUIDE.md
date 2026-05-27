@@ -231,4 +231,15 @@ curl https://xn--mto-bretagne-bebb.loto-tracker.fr/api/meteo/bretagne
 
 root@UID7E:/mnt/d/Users/steph/Documents/projet_meteo/meteo-bretagne-ia# OLLAMA_HOST=0.0.0.0:11434 ollama serve
 Error: listen tcp 0.0.0.0:11434: bind: address already in use
-root@UID7E:/mnt/d/Users/steph/Documents/projet_meteo/meteo-bretagne-ia# 
+root@UID7E:/mnt/d/Users/steph/Documents/projet_meteo/meteo-bretagne-ia#
+
+root@UID7E:/mnt/d/Users/steph/Documents/projet_meteo/meteo-bretagne-ia# curl "http://127.0.0.1:8001/api/gfs/download?forecast_hour=6"
+{"file":"/app/data/grib/gfs_bretagne_20260526_00_f006.grib2","date":"20260526","cycle":"00","forecast_hour":6,"size_mb":0.01,"url":"https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25.pl?dir=%2Fgfs.20260526%2F00%2Fatmos&file=gfs.t00z.pgrb2.0p25.f006&lev_2_m_above_ground=on&lev_10_m_above_ground=on&lev_surface=on&var_TMP=on&var_GUST=on&var_APCP=on&subregion=&leftlon=-6&rightlon=10&toplat=52&boroot@UID7E:/mnt/d/Users/steph/Documents/projet_meteo/meteo-bretagne-ia# docker exec -it api_meteo_bretagne grib_ls /app/data/grib/gfs_bretagne_20260526_00_f006.grib20_f006.grib2
+/app/data/grib/gfs_bretagne_20260526_00_f006.grib2
+edition      centre       date         dataType     gridType     stepRange    typeOfLevel  level        shortName    packingType
+2            kwbc         20260526     fc           regular_ll   6            surface      0            gust         grid_simple
+2            kwbc         20260526     fc           regular_ll   6            surface      0            t            grid_simple
+2            kwbc         20260526     fc           regular_ll   6            heightAboveGround  2            2t           grid_simple
+2            kwbc         20260526     fc           regular_ll   0-6          surface      0            tp           grid_simple
+2            kwbc         20260526     fc           regular_ll   0-6          surface      0            tp           grid_simple
+5 of 5 messages in /app/data/grib/gfs_bretagne_20260526_00_f006.grib2
