@@ -5,3 +5,6 @@ ollama
 SQLAlchemy
 psycopg2-binary
 apscheduler
+
+pytest
+httpx

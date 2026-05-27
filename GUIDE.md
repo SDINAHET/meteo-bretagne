@@ -43,6 +43,13 @@ root@UID7E:/mnt/d/Users/steph/Documents/projet_meteo/meteo-bretagne-ia# tree
     ├── download_arome.py
     └── resume_ollama.py
 
+
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+
+
 4 directories, 5 files
 root@UID7E:/mnt/d/Users/steph/Documents/projet_meteo/meteo-bretagne-ia# python3 -m venv venv
 source venv/bin/activate

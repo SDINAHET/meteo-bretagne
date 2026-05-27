@@ -201,7 +201,7 @@ GET /api/meteo/historique/24h
 GET /api/rainviewer/weather-maps
 ```
 
----
+
 
 # 🌐 Configuration frontend
 
@@ -266,6 +266,16 @@ sudo certbot --apache -d xn--mto-bretagne-bebb.loto-tracker.fr
 ```bash
 docker compose up --build -d
 ```
+
+
+# Tests
+
+Le projet contient des tests automatisés avec `pytest` et `TestClient`.
+
+```bash
+pip install pytest httpx
+pytest -v
+---
 
 ---
 
