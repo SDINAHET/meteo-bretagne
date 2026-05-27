@@ -9,3 +9,6 @@ apscheduler
 xarray
 cfgrib
 eccodes
+
+pytest==8.3.5
+httpx==0.28.1

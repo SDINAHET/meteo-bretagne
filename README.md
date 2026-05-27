@@ -280,6 +280,18 @@ docker compose up --build -d
 - Interface responsive dark mode
 
 ---
+# Tests
+
+Le projet contient des tests automatisés avec `pytest` et `TestClient`.
+
+```bash
+pip install pytest httpx
+pytest -v
+
+python3 -m pytest -v
+httpx http://127.0.0.1:8001/api/meteo/bretagne
+```
+
 
 # 📸 Aperçu
 
