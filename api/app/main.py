@@ -305,6 +305,7 @@
 from datetime import datetime, timedelta, timezone
 from .download_gfs import download_gfs_bretagne
 from .read_grib import read_gfs_summary
+from .resume_ollama import generer_resume_meteo
 
 import os
 import ollama
@@ -501,39 +502,61 @@ def rainviewer_weather_maps():
     return response.json()
 
 
+# @app.get("/meteo/rennes/resume")
+# def resume_rennes():
+#     meteo = meteo_rennes()
+
+#     prompt = f"""
+# Prévision météo Bretagne :
+
+# Ville : {meteo['ville']}
+# Température : {meteo['temperature']}°C
+# Pluie : {meteo['pluie_mm']} mm
+# Rafales : {meteo['rafales_kmh']} km/h
+# Risque : {meteo['risque']}
+
+# Explique simplement cette météo en français en 3 phrases maximum.
+# """
+
+#     try:
+#         response = ollama_client.generate(
+#             model="llama3.1:8b",
+#             prompt=prompt,
+#         )
+
+#         return {
+#             "meteo": meteo,
+#             "resume": response["response"],
+#         }
+
+#     except Exception as e:
+#         return {
+#             "meteo": meteo,
+#             "resume": None,
+#             "error": str(e),
+#         }
+
 @app.get("/meteo/rennes/resume")
 def resume_rennes():
     meteo = meteo_rennes()
+    previsions = previsions_bretagne()
 
-    prompt = f"""
-Prévision météo Bretagne :
-
-Ville : {meteo['ville']}
-Température : {meteo['temperature']}°C
-Pluie : {meteo['pluie_mm']} mm
-Rafales : {meteo['rafales_kmh']} km/h
-Risque : {meteo['risque']}
-
-Explique simplement cette météo en français en 3 phrases maximum.
-"""
+    rennes_prev = next(
+        (v for v in previsions if v["ville"].lower() == "rennes"),
+        None
+    )
 
     try:
-        response = ollama_client.generate(
-            model="llama3.1:8b",
-            prompt=prompt,
+        resume = generer_resume_meteo(
+            meteo=meteo,
+            previsions=rennes_prev["previsions"] if rennes_prev else [],
+            vigilance="orange canicule"
         )
 
-        return {
-            "meteo": meteo,
-            "resume": response["response"],
-        }
+        return {"meteo": meteo, "resume": resume}
 
     except Exception as e:
-        return {
-            "meteo": meteo,
-            "resume": None,
-            "error": str(e),
-        }
+        return {"meteo": meteo, "resume": None, "error": str(e)}
 
 @app.get("/api/gfs/download")
 def api_download_gfs(forecast_hour: int = 3):

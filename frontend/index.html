@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet"
   href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☀️</text></svg>">
 
   <style>
     :root {
@@ -79,7 +80,7 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(5, minmax(150px, 1fr));
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
       gap: 14px;
       margin: 22px 0;
     }
@@ -310,7 +311,7 @@
         <div class="stat"><div class="label">Température</div><div class="value" id="temperature">...</div></div>
         <div class="stat"><div class="label">Pluie</div><div class="value" id="pluie">...</div></div>
         <div class="stat"><div class="label">Rafales</div><div class="value" id="rafales">...</div></div>
-        <div class="stat"><div class="label">Risque</div><div class="value" id="risque">...</div></div>
+        <!-- <div class="stat"><div class="label">Risque</div><div class="value" id="risque">...</div></div> -->
       </div>
 
       <h2>Résumé IA</h2>
@@ -346,7 +347,7 @@
           <div class="panel">
             <h2>Villes</h2>
             <table>
-              <thead><tr><th>Ville</th><th>T°</th><th>Pluie</th><th>Rafales</th><th>Risque</th></tr></thead>
+              <thead><tr><th>Ville</th><th>T°</th><th>Pluie</th><th>Rafales</tr></thead>
               <tbody id="villes-table"><tr><td colspan="5">Chargement...</td></tr></tbody>
             </table>
           </div>
@@ -433,7 +434,8 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    const API_BASE_URL = "http://127.0.0.1:8001";
+    const API_BASE_URL = "";
+    <!-- const API_BASE_URL = "http://127.0.0.1:8001"; -->
     const DAYS = ["J+1", "J+2", "J+3"];
     const MOMENTS = ["matin", "midi", "apres-midi", "soir", "nuit"];
     const MOMENT_LABELS = { "matin": "Matin", "midi": "Midi", "apres-midi": "Après-midi", "soir": "Soir", "nuit": "Nuit" };
@@ -554,7 +556,12 @@
     }
 
     function popupVille(v) {
-      return `<strong>${v.ville}</strong><br>🌡️ ${v.temperature ?? "N/A"} °C<br>🌧️ ${v.pluie_mm ?? "N/A"} mm<br>💨 ${v.rafales_kmh ?? "N/A"} km/h<br>⚠️ ${v.risque ?? "N/A"}`;
+      return `
+        <strong>${v.ville}</strong><br>
+        🌡️ ${v.temperature ?? "N/A"} °C<br>
+        🌧️ ${v.pluie_mm ?? "N/A"} mm<br>
+        💨 ${v.rafales_kmh ?? "N/A"} km/h
+      `;
     }
 
     function addCityMarker(layer, ville, targetMap, permanent = true) {
@@ -585,7 +592,7 @@
       tbody.innerHTML = "";
       villes.forEach(v => {
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${v.ville}</td><td>${v.temperature ?? "N/A"} °C</td><td>${v.pluie_mm ?? "N/A"} mm</td><td>${v.rafales_kmh ?? "N/A"} km/h</td><td>${v.risque ?? "N/A"}</td>`;
+        tr.innerHTML = `<td>${v.ville}</td><td>${v.temperature ?? "N/A"} °C</td><td>${v.pluie_mm ?? "N/A"} mm</td><td>${v.rafales_kmh ?? "N/A"} km/h</td>`;
         tr.onclick = () => map.setView([v.lat, v.lon], 10);
         tbody.appendChild(tr);
       });
@@ -601,7 +608,7 @@
       document.getElementById("temperature").textContent = `${m.temperature ?? "N/A"}°C`;
       document.getElementById("pluie").textContent = `${m.pluie_mm ?? "N/A"} mm`;
       document.getElementById("rafales").textContent = `${m.rafales_kmh ?? "N/A"} km/h`;
-      document.getElementById("risque").textContent = m.risque ?? "N/A";
+      // document.getElementById("risque").textContent = m.risque ?? "N/A";
       setStatus("API connectée", true);
 
       document.getElementById("actualise-carte").textContent =

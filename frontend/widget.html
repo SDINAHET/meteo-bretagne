@@ -6,6 +6,7 @@
   <title>Widget Météo Bretagne</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☀️</text></svg>">
 
   <style>
     html, body {
@@ -79,9 +80,9 @@
 
   <div id="last-update">Actualisation...</div>
 
-  <a id="back-site" href="https://météo-bretagne.loto-tracker.fr">
+  <!-- <a id="back-site" href="https://météo-bretagne.loto-tracker.fr">
     ← Retour au site
-  </a>
+  </a> -->
 
   <div id="map"></div>
 
@@ -163,8 +164,7 @@
           <strong>${v.ville}</strong><br>
           🌡️ ${v.temperature} °C<br>
           🌧️ ${v.pluie_mm} mm<br>
-          💨 ${v.rafales_kmh} km/h<br>
-          ⚠️ ${v.risque}
+          💨 ${v.rafales_kmh} km/h
         `);
       });
     }
