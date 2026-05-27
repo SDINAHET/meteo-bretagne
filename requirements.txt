@@ -5,3 +5,7 @@ ollama
 SQLAlchemy
 psycopg2-binary
 apscheduler
+
+xarray
+cfgrib
+eccodes

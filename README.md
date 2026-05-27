@@ -216,3 +216,10 @@ docker compose up --build -d
 
 pkill ollama
 OLLAMA_HOST=0.0.0.0:11434 ollama serve
+
+
+root@UID7E:/mnt/d/Users/steph/Documents/projet_meteo/meteo-bretagne-ia# curl "http://127.0.0.1:8001/api/gfs/download?forecast_hour=3"
+{"file":"data/grib/gfs_bretagne_20260525_18_f003.grib2","date":"20260525","cycle":"18","forecast_hour":3,"size_mb":0.0}root@UID7E:/mroot@UID7E:/mnt/d/Users/steph/Documents/projet_meteo/meteo-bretagne-ia# curl "http://127.0.0.1:8001/api/gfs/read?path=data/grib/TON_FICHIER.grib2"
+Internal Server Errorroot@UID7E:/mnt/d/Users/steph/Documents/projet_meteo/meteo-bretagne-ia#
+
+

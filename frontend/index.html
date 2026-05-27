@@ -7,6 +7,8 @@
   <title>Météo Bretagne IA v4</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
   <style>
     :root {
@@ -265,6 +267,30 @@
       font-weight: 800;
       box-shadow: 0 8px 24px rgba(0,0,0,.35);
     }
+
+    .site-footer {
+      width: min(1380px, calc(100% - 28px));
+      margin: 0 auto 24px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(2, 6, 23, .72);
+      color: var(--muted);
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      font-weight: 700;
+    }
+
+    .site-footer a {
+      color: #bae6fd;
+      text-decoration: none;
+    }
+
+    .site-footer a:hover {
+      color: white;
+    }
   </style>
 </head>
 
@@ -382,6 +408,26 @@
         </div>
       </section>
     </section>
+
+    <footer class="site-footer">
+      <span>© 2026 — Météo Bretagne</span>
+
+      <a href="https://github.com/SDINAHET/meteo-bretagne"
+        target="_blank"
+        rel="noopener noreferrer">
+        <i class="fa-brands fa-github"></i>
+        SDINAHET / meteo-bretagne
+      </a>
+
+      <a href="https://xn--mto-bretagne-bebb.loto-tracker.fr/widget.html" target="_blank" rel="noopener noreferrer">
+        Widget météo
+      </a>
+
+      <a href="https://loto-tracker.fr" target="_blank" rel="noopener noreferrer">
+        Loto Tracker
+      </a>
+    </footer>
+
   </main>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

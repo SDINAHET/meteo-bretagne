@@ -303,6 +303,8 @@
 
 # from datetime import datetime, timedelta
 from datetime import datetime, timedelta, timezone
+from .download_gfs import download_gfs_bretagne
+from .read_grib import read_gfs_summary
 
 import os
 import ollama
@@ -324,8 +326,8 @@ app = FastAPI(title="Météo Bretagne IA v4")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5500",
-        "http://127.0.0.1:5500",
+        "http://localhost:5560",
+        "http://127.0.0.1:5560",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -532,6 +534,15 @@ Explique simplement cette météo en français en 3 phrases maximum.
             "resume": None,
             "error": str(e),
         }
+
+@app.get("/api/gfs/download")
+def api_download_gfs(forecast_hour: int = 3):
+    return download_gfs_bretagne(forecast_hour)
+
+
+@app.get("/api/gfs/read")
+def api_read_gfs(path: str):
+    return read_gfs_summary(path)
 
 
 scheduler = BackgroundScheduler()

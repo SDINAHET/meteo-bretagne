@@ -29,6 +29,7 @@ services:
     volumes:
       - postgres_meteo_data:/var/lib/postgresql/data
 
+
   api_meteo:
     build:
       context: .
@@ -44,9 +45,10 @@ services:
       # OLLAMA_HOST: http:/0.0.0.0:11434
       OLLAMA_HOST: http://host.docker.internal:11434
       # OLLAMA_HOST: http://127.0.0.1:11434
+    volumes:
+      - ./data:/app/data
     depends_on:
       - postgres_meteo
-      # - ollama
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -55,7 +57,7 @@ services:
     container_name: frontend_meteo_bretagne
     restart: unless-stopped
     ports:
-      - "5500:80"
+      - "5560:80"
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
     depends_on:
