@@ -243,3 +243,12 @@ edition      centre       date         dataType     gridType     stepRange    ty
 2            kwbc         20260526     fc           regular_ll   0-6          surface      0            tp           grid_simple
 2            kwbc         20260526     fc           regular_ll   0-6          surface      0            tp           grid_simple
 5 of 5 messages in /app/data/grib/gfs_bretagne_20260526_00_f006.grib2
+
+stefdev@ubuntu:~/meteo/meteo-bretagne$ curl -i http://127.0.0.1:8001/meteo/rennes
+HTTP/1.1 503 Service Unavailable
+date: Wed, 27 May 2026 23:53:10 GMT
+server: uvicorn
+content-length: 118
+content-type: application/json
+
+{"detail":"API météo temporairement limitée : trop de requêtes vers Open-Meteo. Réessaie dans quelques minutes."}
